@@ -1,2 +1,2 @@
-# yoshiemitsu
-Odoo v14.0 for YoshieMitsu (BrauBrauCO)
+# Yoshiemitsu
+Git repository for yoshie and hideki.
