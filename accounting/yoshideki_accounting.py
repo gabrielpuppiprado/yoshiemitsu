@@ -1,4 +1,5 @@
-import pandas
+import json
+import os
 
 ### template para a tabela
 TEMPLATE = \
@@ -9,17 +10,6 @@ campos --> emergencia,comum,yoshie,hideki,comum_topico1,comum_topico2,yoshie_top
 valores --> 0,0,0,0,0,0,0,0
 """
 ###
-
-
-def load_db(path):
-    db = read_csv(path)
-
-def save_db(db):
-    with open() as newfile:
-        newfile.write()
-    db.to_csv()
-
-CONFIGS = {}
 
 template = {
     'emergencia': {'porcentagem': 50.0, 'linhas': False},
@@ -41,6 +31,59 @@ template = {
     }},
 }
 
+
+def load_db(path):
+    if not os.path.exists(path):
+        return {}
+    with open(path, 'r') as file:
+        try:
+            return json.load(file)
+        except json.JSONDecodeError:
+            return {}
+
+def save_db(db, save_on):
+    with open(save_on, 'w') as newfile:
+        json.dump(db, newfile, indent=4)
+
+def diluir_proporcionalmente(valor, path='db.json'):
+    # Carregar dados
+    db = load_db(path)
+    
+    # Se não houver banco de dados salvo, usar template inicial
+    if not db:
+        db = {k: {'total': 0.0, 'porcentagem': v['porcentagem'], 'linhas': v.get('linhas', {})} for k, v in template.items()}
+        for categoria in db.values():
+            if 'linhas' in categoria and isinstance(categoria['linhas'], dict):
+                for sub in categoria['linhas']:
+                    categoria['linhas'][sub]['total'] = 0.0
+    
+    # Distribuir o valor proporcionalmente
+    for categoria, dados in template.items():
+        porcentagem_cat = dados['porcentagem'] / 100.0
+        valor_cat = valor * porcentagem_cat
+        db[categoria]['total'] += valor_cat
+        
+        if 'linhas' in dados and isinstance(dados['linhas'], dict):
+            for subcat, subdados in dados['linhas'].items():
+                porcentagem_sub = subdados['porcentagem'] / 100.0
+                valor_sub = valor_cat * porcentagem_sub
+                db[categoria]['linhas'][subcat]['total'] += valor_sub
+    
+    # Salvar novo banco de dados
+    save_db(db, path)
+
+    # Mostrar os dados salvos no banco de dados
+    mostrar_resultado(db)
+
+def mostrar_resultado(db):
+    """Exibe os valores finais de cada categoria e subtópico na tela."""
+    print("\n==== TABELA ATUALIZADA ====")
+    for categoria, dados in db.items():
+        print(f"\n[{categoria.upper()}] - Total: R$ {dados['total']:.2f} ({dados['porcentagem']}%)")
+        if 'linhas' in dados and isinstance(dados['linhas'], dict):
+            for sub, subdados in dados['linhas'].items():
+                print(f"  └── {sub}: R$ {subdados['total']:.2f} ({subdados['porcentagem']}%)")
+
 def logica_principal():
     while True:
         try:
@@ -51,12 +94,6 @@ def logica_principal():
 
     if novo_valor:
         diluir_proporcionalmente(novo_valor) # chamando a funcao para diluir o valor conforme as porcentagems
-
-def diluir_proporcionalmente(valor):
-    # ler dados
-    # diluir valores
-    # salvar tabela
-    template.
 
 if __name__ == '__main__':
     logica_principal()
